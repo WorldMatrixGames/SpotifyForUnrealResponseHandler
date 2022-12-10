@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spotify Connected!</title>
+    <style>
+        article, section {
+            display: flex;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        h1 {
+            color: coral;
+        }
+
+        b {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <article>
+        <h1>Connected to Spotify!</h1>
+        <section>
+            <p>The {GAME} is now connected to Spotify!. Go back to your game and have a loads of fun.</p>
+            <p>
+                <b>To avoid going through this process again while you are playing, you can leave this window open.</b>
+            </p>
+        </section>
+    </article>
+    <script>
+
+        const tokenPUTPort = 6094;
+        const errorPOSTPort = 6094;
+
+        const tokenRegex = /access_token=([^&.]+)&/;
+        const errorRegex = /error=([^&.]+)/;
+        const tokenObj = window.location.hash.match(tokenRegex);
+        const errorMsgObj = window.location.search.match(errorRegex);
+     
+        let token = null;
+        let errorMsg = null;
+
+        if(errorMsgObj && errorMsgObj.length) {
+            errorMsg = errorMsgObj[1];
+            fetch(`http://localhost:${errorPOSTPort}/auth-denied`, { method: "POST" })
+            .then(res => res.json())
+            .then(({sessionRefreshUrl})=>{
+                if(confirm("If you want to connect the game with Spotify to play music, please agree to provide the requested permission. Do you want to connect?")){
+                    alert(sessionRefreshUrl)
+                    window.location.href = sessionRefreshUrl;
+                } else {
+                    window.close();
+                }
+            })
+
+        } else if(tokenObj && tokenObj.length > 1){
+            token = tokenObj[1];
+           
+            fetch(`http://localhost:${tokenPUTPort}/update-session?access_token=${token}`, { method: "PUT" })
+            .then(res => res.json())
+            .then(({ sessionRefreshUrl }) => {
+                setTimeout(() => {
+                    window.location.href = sessionRefreshUrl;
+                }, (3600 - 100) * 1000);
+            })
+            .catch(() => {
+                // Implement you custom error handling here
+            })
+        }
+
+        
+
+    </script>
+</body>
+</html>
